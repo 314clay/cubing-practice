@@ -128,6 +128,36 @@ export async function removeFromSRS(srsItemId) {
   return res.json();
 }
 
+export async function removeFromSRSByDepth(solveId, depth) {
+  const res = await fetch(`${API_BASE}/srs/solve/${solveId}/depth/${depth}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to remove from SRS');
+  return res.json();
+}
+
+export async function getSRSItems(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.activeOnly) params.append('active_only', 'true');
+  if (filters.depth !== undefined && filters.depth !== null) params.append('depth', String(filters.depth));
+  if (filters.limit) params.append('limit', String(filters.limit));
+  if (filters.offset) params.append('offset', String(filters.offset));
+  const query = params.toString() ? `?${params}` : '';
+  const res = await fetch(`${API_BASE}/srs/items${query}`);
+  if (!res.ok) throw new Error('Failed to fetch SRS items');
+  return res.json();
+}
+
+export async function toggleSRSItemActive(srsItemId, isActive) {
+  const res = await fetch(`${API_BASE}/srs/item/${srsItemId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_active: isActive }),
+  });
+  if (!res.ok) throw new Error('Failed to update SRS item');
+  return res.json();
+}
+
 export async function getSRSStats() {
   const res = await fetch(`${API_BASE}/srs/stats`);
   if (!res.ok) throw new Error('Failed to fetch SRS stats');
@@ -138,11 +168,63 @@ export async function getSRSStats() {
 
 export async function getSolves(filters = {}) {
   const params = new URLSearchParams();
+
+  // Text filters
   if (filters.solver) params.append('solver', filters.solver);
+
+  // Result time filters
   if (filters.minResult) params.append('min_result', String(filters.minResult));
   if (filters.maxResult) params.append('max_result', String(filters.maxResult));
+
+  // Move count filters
+  if (filters.minCross !== undefined && filters.minCross !== null) {
+    params.append('min_cross', String(filters.minCross));
+  }
+  if (filters.maxCross !== undefined && filters.maxCross !== null) {
+    params.append('max_cross', String(filters.maxCross));
+  }
+  if (filters.minPair1 !== undefined && filters.minPair1 !== null) {
+    params.append('min_pair1', String(filters.minPair1));
+  }
+  if (filters.maxPair1 !== undefined && filters.maxPair1 !== null) {
+    params.append('max_pair1', String(filters.maxPair1));
+  }
+  if (filters.minPair2 !== undefined && filters.minPair2 !== null) {
+    params.append('min_pair2', String(filters.minPair2));
+  }
+  if (filters.maxPair2 !== undefined && filters.maxPair2 !== null) {
+    params.append('max_pair2', String(filters.maxPair2));
+  }
+  if (filters.minPair3 !== undefined && filters.minPair3 !== null) {
+    params.append('min_pair3', String(filters.minPair3));
+  }
+  if (filters.maxPair3 !== undefined && filters.maxPair3 !== null) {
+    params.append('max_pair3', String(filters.maxPair3));
+  }
+  if (filters.minF2l !== undefined && filters.minF2l !== null) {
+    params.append('min_f2l', String(filters.minF2l));
+  }
+  if (filters.maxF2l !== undefined && filters.maxF2l !== null) {
+    params.append('max_f2l', String(filters.maxF2l));
+  }
+  if (filters.minTotal !== undefined && filters.minTotal !== null) {
+    params.append('min_total', String(filters.minTotal));
+  }
+  if (filters.maxTotal !== undefined && filters.maxTotal !== null) {
+    params.append('max_total', String(filters.maxTotal));
+  }
+
+  // Cross type filter
+  if (filters.crossType) params.append('cross_type', filters.crossType);
+
+  // Sorting
+  if (filters.sortBy) params.append('sort_by', filters.sortBy);
+  if (filters.sortOrder) params.append('sort_order', filters.sortOrder);
+
+  // Pagination
   if (filters.limit) params.append('limit', String(filters.limit));
   if (filters.offset) params.append('offset', String(filters.offset));
+
   const query = params.toString() ? `?${params}` : '';
   const res = await fetch(`${API_BASE}/solves${query}`);
   if (!res.ok) throw new Error('Failed to fetch solves');
