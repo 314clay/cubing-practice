@@ -27,6 +27,9 @@ export function useKeyboard(handlers, deps = []) {
       case 'f':
         handlers.onFail?.();
         break;
+      case 'r':
+        handlers.onResetTimer?.();
+        break;
       case 'n':
         event.preventDefault();
         handlers.onNotes?.();

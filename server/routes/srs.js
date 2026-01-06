@@ -27,6 +27,7 @@ router.get('/due', async (req, res) => {
       FROM cross_trainer.srs_items si
       JOIN cubing.solves s ON s.id = si.solve_id
       WHERE si.next_review_at <= NOW()
+        AND si.is_active = true
     `;
 
     const params = [];
@@ -46,6 +47,7 @@ router.get('/due', async (req, res) => {
       SELECT COUNT(*) as total
       FROM cross_trainer.srs_items
       WHERE next_review_at <= NOW()
+        AND is_active = true
     `;
     const countParams = [];
     if (depth !== undefined) {
@@ -232,24 +234,46 @@ router.delete('/item/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/srs/solve/:solveId/depth/:depth - Remove by solve_id and depth
+router.delete('/solve/:solveId/depth/:depth', async (req, res) => {
+  try {
+    const { solveId, depth } = req.params;
+
+    const result = await pool.query(
+      'DELETE FROM cross_trainer.srs_items WHERE solve_id = $1 AND depth = $2 RETURNING id',
+      [solveId, depth]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'SRS item not found', code: 'NOT_FOUND' } });
+    }
+
+    res.json({ success: true, deleted_id: result.rows[0].id });
+  } catch (err) {
+    console.error('Error removing from SRS:', err);
+    res.status(500).json({ error: { message: 'Failed to remove from SRS', code: 'INTERNAL_ERROR' } });
+  }
+});
+
 // GET /api/srs/stats - SRS statistics
 router.get('/stats', async (req, res) => {
   try {
-    // Total items
-    const totalResult = await pool.query('SELECT COUNT(*) as total FROM cross_trainer.srs_items');
+    // Total items (active only)
+    const totalResult = await pool.query('SELECT COUNT(*) as total FROM cross_trainer.srs_items WHERE is_active = true');
 
-    // Due today
+    // Due today (active only)
     const dueResult = await pool.query(
-      'SELECT COUNT(*) as due FROM cross_trainer.srs_items WHERE next_review_at <= NOW()'
+      'SELECT COUNT(*) as due FROM cross_trainer.srs_items WHERE next_review_at <= NOW() AND is_active = true'
     );
 
-    // By depth
+    // By depth (active only)
     const byDepthResult = await pool.query(
       `SELECT
          depth,
          COUNT(*) as items,
          AVG(ease_factor) as avg_ease
        FROM cross_trainer.srs_items
+       WHERE is_active = true
        GROUP BY depth
        ORDER BY depth`
     );
@@ -284,6 +308,108 @@ router.get('/stats', async (req, res) => {
   } catch (err) {
     console.error('Error fetching SRS stats:', err);
     res.status(500).json({ error: { message: 'Failed to fetch SRS stats', code: 'INTERNAL_ERROR' } });
+  }
+});
+
+// GET /api/srs/items - List all SRS items for management
+router.get('/items', async (req, res) => {
+  try {
+    const { active_only, depth, limit = 50, offset = 0 } = req.query;
+
+    let query = `
+      SELECT
+        si.id,
+        si.solve_id,
+        si.depth,
+        si.ease_factor,
+        si.interval_days,
+        si.repetitions,
+        si.next_review_at,
+        si.last_reviewed_at,
+        si.times_correct,
+        si.times_incorrect,
+        si.is_active,
+        si.notes as item_notes,
+        si.created_at,
+        s.scramble,
+        s.solver,
+        s.result,
+        s.competition
+      FROM cross_trainer.srs_items si
+      JOIN cubing.solves s ON s.id = si.solve_id
+      WHERE 1=1
+    `;
+
+    const params = [];
+
+    if (active_only === 'true') {
+      query += ` AND si.is_active = true`;
+    }
+
+    if (depth !== undefined) {
+      params.push(parseInt(depth, 10));
+      query += ` AND si.depth = $${params.length}`;
+    }
+
+    query += ` ORDER BY si.is_active DESC, si.next_review_at ASC`;
+    params.push(parseInt(limit, 10));
+    query += ` LIMIT $${params.length}`;
+    params.push(parseInt(offset, 10));
+    query += ` OFFSET $${params.length}`;
+
+    const result = await pool.query(query, params);
+
+    // Get total count
+    let countQuery = `SELECT COUNT(*) as total FROM cross_trainer.srs_items WHERE 1=1`;
+    const countParams = [];
+
+    if (active_only === 'true') {
+      countQuery += ` AND is_active = true`;
+    }
+
+    if (depth !== undefined) {
+      countParams.push(parseInt(depth, 10));
+      countQuery += ` AND depth = $${countParams.length}`;
+    }
+
+    const countResult = await pool.query(countQuery, countParams);
+
+    res.json({
+      items: result.rows,
+      total: parseInt(countResult.rows[0].total, 10),
+    });
+  } catch (err) {
+    console.error('Error fetching SRS items:', err);
+    res.status(500).json({ error: { message: 'Failed to fetch SRS items', code: 'INTERNAL_ERROR' } });
+  }
+});
+
+// PATCH /api/srs/item/:id - Update SRS item (toggle active status)
+router.patch('/item/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    if (is_active === undefined) {
+      return res.status(400).json({ error: { message: 'is_active is required', code: 'VALIDATION_ERROR' } });
+    }
+
+    const result = await pool.query(
+      `UPDATE cross_trainer.srs_items
+       SET is_active = $1
+       WHERE id = $2
+       RETURNING id, is_active`,
+      [is_active, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'SRS item not found', code: 'NOT_FOUND' } });
+    }
+
+    res.json({ item: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating SRS item:', err);
+    res.status(500).json({ error: { message: 'Failed to update SRS item', code: 'INTERNAL_ERROR' } });
   }
 });
 

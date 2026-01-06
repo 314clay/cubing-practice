@@ -28,6 +28,8 @@ export function SRSTrainer({ onReview }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [startTime, setStartTime] = useState(null);
+  const [timeReset, setTimeReset] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const fetchDueItems = useCallback(async () => {
     setLoading(true);

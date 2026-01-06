@@ -35,6 +35,7 @@ export function Trainer() {
 
   const [timerRunning, setTimerRunning] = useState(false);
   const [inspectionTime, setInspectionTime] = useState(null);
+  const [timerResetCount, setTimerResetCount] = useState(0);
   const [crossSuccess, setCrossSuccess] = useState(null);
   const [pairsPlanned, setPairsPlanned] = useState(null);
   const [notes, setNotes] = useState('');
@@ -63,10 +64,18 @@ export function Trainer() {
   const resetState = useCallback(() => {
     setTimerRunning(false);
     setInspectionTime(null);
+    setTimerResetCount(c => c + 1);
     setCrossSuccess(null);
     setPairsPlanned(null);
     setNotes('');
   }, []);
+
+  const handleResetTimer = useCallback(() => {
+    if (!timerRunning) {
+      setInspectionTime(null);
+      setTimerResetCount(c => c + 1);
+    }
+  }, [timerRunning]);
 
   const handleSubmit = useCallback(async () => {
     if (crossSuccess === null || !scramble) return;
@@ -159,10 +168,13 @@ export function Trainer() {
     onNotes: () => {
       notesRef.current?.focus();
     },
+    onResetTimer: () => {
+      handleResetTimer();
+    },
     onEscape: () => {
       resetState();
     },
-  }, [timerRunning, crossSuccess, settings, handleSubmit, handleSettingsChange, resetState]);
+  }, [timerRunning, crossSuccess, settings, handleSubmit, handleSettingsChange, resetState, handleResetTimer]);
 
   const canSubmit = crossSuccess !== null &&
     (settings.pairsAttempting === 0 || pairsPlanned !== null) &&
@@ -195,7 +207,18 @@ export function Trainer() {
         <Timer
           running={timerRunning}
           onTimeUpdate={setInspectionTime}
+          resetSignal={timerResetCount}
         />
+        {!timerRunning && inspectionTime !== null && (
+          <div className="text-center mt-3">
+            <button
+              onClick={handleResetTimer}
+              className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+            >
+              Reset Timer (R)
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="bg-gray-800 rounded-lg p-6 space-y-6">
@@ -227,6 +250,7 @@ export function Trainer() {
       <footer className="text-center text-sm text-gray-600">
         <div className="space-x-4">
           <span>Space: Start/Stop Timer</span>
+          <span>R: Reset Timer</span>
           <span>S/F: Success/Fail</span>
           <span>0-4: Pairs Planned</span>
           <span>Enter: Submit</span>

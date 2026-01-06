@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Header } from '../Header';
 import { SRSTrainer } from './SRSTrainer';
 import { SRSBrowser } from './SRSBrowser';
+import { SRSManager } from './SRSManager';
 import { getSRSStats } from '../../api/client';
-
-const TABS = ['train', 'browse'];
 
 export function SRSPage() {
   const [activeTab, setActiveTab] = useState('train');
@@ -62,6 +61,16 @@ export function SRSPage() {
           >
             Browse Solves
           </button>
+          <button
+            onClick={() => setActiveTab('manage')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'manage'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            Manage
+          </button>
         </div>
 
         {stats && (
@@ -71,11 +80,9 @@ export function SRSPage() {
         )}
       </div>
 
-      {activeTab === 'train' ? (
-        <SRSTrainer onReview={handleReview} />
-      ) : (
-        <SRSBrowser onAdd={handleAddToSRS} />
-      )}
+      {activeTab === 'train' && <SRSTrainer onReview={handleReview} />}
+      {activeTab === 'browse' && <SRSBrowser onAdd={handleAddToSRS} />}
+      {activeTab === 'manage' && <SRSManager onUpdate={fetchStats} />}
     </div>
   );
 }

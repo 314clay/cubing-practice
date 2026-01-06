@@ -38,7 +38,8 @@ router.get('/summary', async (req, res) => {
       `SELECT
          cross_moves,
          COUNT(*) as attempts,
-         ROUND(100.0 * COUNT(*) FILTER (WHERE cross_success = true) / NULLIF(COUNT(*), 0), 1) as success_rate
+         ROUND(100.0 * COUNT(*) FILTER (WHERE cross_success = true) / NULLIF(COUNT(*), 0), 1) as success_rate,
+         AVG(inspection_time_ms) FILTER (WHERE inspection_time_ms IS NOT NULL) as avg_inspection_time_ms
        FROM cross_trainer.attempts
        WHERE 1=1 ${dateCondition}
        GROUP BY cross_moves
@@ -51,7 +52,8 @@ router.get('/summary', async (req, res) => {
       `SELECT
          pairs_attempted,
          COUNT(*) as attempts,
-         ROUND(100.0 * COUNT(*) FILTER (WHERE cross_success = true) / NULLIF(COUNT(*), 0), 1) as success_rate
+         ROUND(100.0 * COUNT(*) FILTER (WHERE cross_success = true) / NULLIF(COUNT(*), 0), 1) as success_rate,
+         AVG(inspection_time_ms) FILTER (WHERE inspection_time_ms IS NOT NULL) as avg_inspection_time_ms
        FROM cross_trainer.attempts
        WHERE 1=1 ${dateCondition}
        GROUP BY pairs_attempted
@@ -72,7 +74,10 @@ router.get('/summary', async (req, res) => {
     byDifficultyResult.rows.forEach(row => {
       byDifficulty[row.cross_moves] = {
         attempts: parseInt(row.attempts),
-        success_rate: parseFloat(row.success_rate) || 0
+        success_rate: parseFloat(row.success_rate) || 0,
+        avg_inspection_time_ms: row.avg_inspection_time_ms
+          ? Math.round(parseFloat(row.avg_inspection_time_ms))
+          : null
       };
     });
 
@@ -81,7 +86,10 @@ router.get('/summary', async (req, res) => {
     byPairsResult.rows.forEach(row => {
       byPairsAttempted[row.pairs_attempted] = {
         attempts: parseInt(row.attempts),
-        success_rate: parseFloat(row.success_rate) || 0
+        success_rate: parseFloat(row.success_rate) || 0,
+        avg_inspection_time_ms: row.avg_inspection_time_ms
+          ? Math.round(parseFloat(row.avg_inspection_time_ms))
+          : null
       };
     });
 

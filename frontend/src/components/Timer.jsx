@@ -1,9 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 
-export function Timer({ running, onTimeUpdate }) {
+export function Timer({ running, onTimeUpdate, resetSignal }) {
   const [time, setTime] = useState(0);
   const startTimeRef = useRef(null);
   const intervalRef = useRef(null);
+
+  // Reset time when resetSignal changes
+  useEffect(() => {
+    if (resetSignal > 0) {
+      setTime(0);
+      onTimeUpdate?.(null);
+    }
+  }, [resetSignal, onTimeUpdate]);
 
   const formatTime = (ms) => {
     const seconds = ms / 1000;

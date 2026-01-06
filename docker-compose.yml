@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    ports:
+      - "11001:11001"
+    environment:
+      - NODE_ENV=production
+      - PORT=11001
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5433
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

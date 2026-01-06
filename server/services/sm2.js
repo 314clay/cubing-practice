@@ -22,9 +22,9 @@ function sm2(item, quality) {
   let repetitions = parseInt(item.repetitions || 0, 10);
 
   if (quality < 3) {
-    // Failed - reset to start
+    // Failed - reset to start, show again immediately
     repetitions = 0;
-    interval = 1;
+    interval = 0;
   } else {
     // Passed
     if (repetitions === 0) {

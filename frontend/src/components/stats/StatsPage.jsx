@@ -7,7 +7,8 @@ import { DifficultyBreakdown } from './DifficultyBreakdown';
 import { PairsBreakdown } from './PairsBreakdown';
 import { RecentNotes } from './RecentNotes';
 import { SessionHistory } from './SessionHistory';
-import { getStats, getDailyStats, getTimeByDifficulty, getRecentNotes, getSessions } from '../../api/client';
+import { getStats, getDailyStats, getTimeByDifficulty, getRecentNotes, getSessions, getSRSStats } from '../../api/client';
+import { SRSStats } from './SRSStats';
 
 const DATE_RANGES = [
   { label: 'Last 7 days', days: 7 },
@@ -23,6 +24,7 @@ export function StatsPage() {
   const [timeByDifficulty, setTimeByDifficulty] = useState([]);
   const [recentNotes, setRecentNotes] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [srsStats, setSrsStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -33,12 +35,13 @@ export function StatsPage() {
         ? new Date(Date.now() - dateRange.days * 24 * 60 * 60 * 1000).toISOString()
         : undefined;
 
-      const [statsRes, dailyRes, timeRes, notesRes, sessionsRes] = await Promise.all([
+      const [statsRes, dailyRes, timeRes, notesRes, sessionsRes, srsRes] = await Promise.all([
         getStats(dateFrom),
         getDailyStats(dateRange.days || 365),
         getTimeByDifficulty(dateFrom),
         getRecentNotes(20),
         getSessions(10),
+        getSRSStats(),
       ]);
 
       setStats(statsRes);
@@ -46,6 +49,7 @@ export function StatsPage() {
       setTimeByDifficulty(timeRes.data || []);
       setRecentNotes(notesRes.attempts || []);
       setSessions(sessionsRes.sessions || []);
+      setSrsStats(srsRes);
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Failed to fetch stats:', err);
@@ -92,6 +96,8 @@ export function StatsPage() {
       ) : (
         <div className="space-y-6">
           <OverviewCards stats={stats} />
+
+          <SRSStats stats={srsStats} />
 
           <DailyChart data={dailyData} />
 
