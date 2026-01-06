@@ -127,7 +127,8 @@ router.get('/daily', async (req, res) => {
          COUNT(*) as attempts,
          ROUND(100.0 * COUNT(*) FILTER (WHERE cross_success = true) / NULLIF(COUNT(*), 0), 1) as success_rate,
          ROUND(AVG(cross_moves), 1) as avg_difficulty,
-         ROUND(AVG(pairs_attempted), 1) as avg_pairs_attempted
+         ROUND(AVG(pairs_attempted), 1) as avg_pairs_attempted,
+         AVG(inspection_time_ms) FILTER (WHERE inspection_time_ms IS NOT NULL) as avg_inspection_time_ms
        FROM cross_trainer.attempts
        WHERE created_at >= NOW() - INTERVAL '1 day' * $1
        GROUP BY DATE(created_at)
@@ -141,7 +142,10 @@ router.get('/daily', async (req, res) => {
         attempts: parseInt(row.attempts),
         success_rate: parseFloat(row.success_rate) || 0,
         avg_difficulty: parseFloat(row.avg_difficulty) || 0,
-        avg_pairs_attempted: parseFloat(row.avg_pairs_attempted) || 0
+        avg_pairs_attempted: parseFloat(row.avg_pairs_attempted) || 0,
+        avg_inspection_time_ms: row.avg_inspection_time_ms
+          ? Math.round(parseFloat(row.avg_inspection_time_ms))
+          : null
       }))
     });
   } catch (err) {
@@ -238,6 +242,60 @@ router.get('/recent-notes', async (req, res) => {
     res.status(500).json({
       error: {
         message: 'Failed to get recent notes',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+// GET /api/stats/attempts-scatter - Get individual attempts for scatter plot visualization
+router.get('/attempts-scatter', async (req, res) => {
+  try {
+    const { date_from, limit = 500 } = req.query;
+
+    let dateCondition = '';
+    const values = [];
+    let paramIndex = 1;
+
+    if (date_from) {
+      dateCondition = ` AND created_at >= $${paramIndex++}`;
+      values.push(date_from);
+    }
+
+    values.push(parseInt(limit, 10));
+
+    const result = await db.query(
+      `SELECT
+         id,
+         created_at,
+         inspection_time_ms,
+         cross_moves,
+         pairs_attempted,
+         cross_success,
+         notes
+       FROM cross_trainer.attempts
+       WHERE inspection_time_ms IS NOT NULL ${dateCondition}
+       ORDER BY created_at DESC
+       LIMIT $${paramIndex}`,
+      values
+    );
+
+    res.json({
+      attempts: result.rows.map(row => ({
+        id: row.id,
+        created_at: row.created_at,
+        inspection_time_ms: parseInt(row.inspection_time_ms),
+        cross_moves: row.cross_moves,
+        pairs_attempted: row.pairs_attempted,
+        cross_success: row.cross_success,
+        notes: row.notes
+      }))
+    });
+  } catch (err) {
+    console.error('Error getting attempts scatter data:', err);
+    res.status(500).json({
+      error: {
+        message: 'Failed to get attempts scatter data',
         code: 'INTERNAL_ERROR'
       }
     });

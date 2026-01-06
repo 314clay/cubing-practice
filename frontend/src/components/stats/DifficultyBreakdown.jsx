@@ -19,6 +19,10 @@ export function DifficultyBreakdown({ data }) {
           const rate = item.success_rate;
           const color = rate >= 80 ? 'bg-green-500' : rate >= 50 ? 'bg-yellow-500' : 'bg-red-500';
 
+          const avgTime = item.avg_inspection_time_ms
+            ? (item.avg_inspection_time_ms / 1000).toFixed(1)
+            : null;
+
           return (
             <div key={level} className="flex items-center gap-3">
               <span className="w-16 text-gray-400 text-sm">{level} move{level > 1 ? 's' : ''}</span>
@@ -34,6 +38,11 @@ export function DifficultyBreakdown({ data }) {
                 </span>
                 <span className="text-gray-500 ml-1">({item.attempts})</span>
               </span>
+              {avgTime && (
+                <span className="w-12 text-right text-xs text-blue-400 font-mono">
+                  {avgTime}s
+                </span>
+              )}
             </div>
           );
         })}

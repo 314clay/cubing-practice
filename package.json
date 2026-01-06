@@ -9,7 +9,7 @@
     "test:frontend": "npm run test --prefix frontend",
     "test:coverage": "vitest run --coverage && npm run test:coverage --prefix frontend",
     "server": "node server/index.js",
-    "server:dev": "node --watch server/index.js",
+    "server:dev": "nodemon server/index.js",
     "frontend": "npm run dev --prefix frontend",
     "frontend:build": "npm run build --prefix frontend",
     "dev": "concurrently \"npm run server:dev\" \"npm run frontend\""
@@ -26,6 +26,8 @@
     "pg": "^8.11.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.11",
     "supertest": "^7.1.4",
     "vitest": "^4.0.16"
   }

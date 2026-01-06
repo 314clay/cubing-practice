@@ -23,6 +23,9 @@ RUN npm ci --omit=dev
 # Copy server code
 COPY server/ ./server/
 
+# Copy scramble data files
+COPY cross_*.json ./
+
 # Copy built frontend from builder stage
 COPY --from=builder /app/frontend/dist ./frontend/dist
 

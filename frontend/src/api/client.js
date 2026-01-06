@@ -164,6 +164,14 @@ export async function getSRSStats() {
   return res.json();
 }
 
+export async function getAttemptsScatter(dateFrom, limit = 500) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (dateFrom) params.append('date_from', dateFrom);
+  const res = await fetch(`${API_BASE}/stats/attempts-scatter?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch attempts scatter data');
+  return res.json();
+}
+
 // Solves Browser Endpoints
 
 export async function getSolves(filters = {}) {
