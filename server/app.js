@@ -9,6 +9,7 @@ const attemptsRoutes = require('./routes/attempts');
 const statsRoutes = require('./routes/stats');
 const srsRoutes = require('./routes/srs');
 const solvesRoutes = require('./routes/solves');
+const zbllRoutes = require('./routes/zbll');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/attempts', attemptsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/srs', srsRoutes);
 app.use('/api/solves', solvesRoutes);
+app.use('/api/zbll', zbllRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

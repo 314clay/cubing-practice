@@ -11,6 +11,7 @@ import { PerformanceScatter } from './PerformanceScatter';
 import { AttemptsTimeline } from './AttemptsTimeline';
 import { getStats, getDailyStats, getTimeByDifficulty, getRecentNotes, getSessions, getSRSStats, getAttemptsScatter } from '../../api/client';
 import { SRSStats } from './SRSStats';
+import { ZBLLStats } from './ZBLLStats';
 
 const DATE_RANGES = [
   { label: 'Last 7 days', days: 7 },
@@ -19,7 +20,13 @@ const DATE_RANGES = [
   { label: 'All time', days: null },
 ];
 
+const TABS = [
+  { id: 'cross', label: 'Cross Trainer' },
+  { id: 'zbll', label: 'ZBLL' },
+];
+
 export function StatsPage() {
+  const [activeTab, setActiveTab] = useState('cross');
   const [dateRange, setDateRange] = useState(DATE_RANGES[1]);
   const [stats, setStats] = useState(null);
   const [dailyData, setDailyData] = useState([]);
@@ -71,6 +78,23 @@ export function StatsPage() {
     <div className="max-w-6xl mx-auto p-4">
       <Header />
 
+      {/* Tabs */}
+      <div className="flex gap-4 mb-6 border-b border-gray-700">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === tab.id
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex justify-between items-center mb-6">
         <div className="flex gap-2">
           {DATE_RANGES.map((range) => (
@@ -94,7 +118,9 @@ export function StatsPage() {
         )}
       </div>
 
-      {loading ? (
+      {activeTab === 'zbll' ? (
+        <ZBLLStats dateRange={dateRange} />
+      ) : loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-xl text-gray-400 animate-pulse">Loading stats...</div>
         </div>

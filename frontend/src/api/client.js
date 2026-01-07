@@ -244,3 +244,45 @@ export async function getSolve(id) {
   if (!res.ok) throw new Error('Failed to fetch solve');
   return res.json();
 }
+
+// ZBLL Endpoints
+
+export async function getZBLLStats(dateFrom, dateTo) {
+  const params = new URLSearchParams();
+  if (dateFrom) params.append('date_from', dateFrom);
+  if (dateTo) params.append('date_to', dateTo);
+  const query = params.toString() ? `?${params}` : '';
+  const res = await fetch(`${API_BASE}/zbll/stats${query}`);
+  if (!res.ok) throw new Error('Failed to fetch ZBLL stats');
+  return res.json();
+}
+
+export async function getZBLLDaily(days = 30) {
+  const res = await fetch(`${API_BASE}/zbll/daily?days=${days}`);
+  if (!res.ok) throw new Error('Failed to fetch ZBLL daily stats');
+  return res.json();
+}
+
+export async function getZBLLCases(sort = 'avg_ms', order = 'desc', minSolves = 3, limit = 20) {
+  const params = new URLSearchParams({
+    sort,
+    order,
+    min_solves: String(minSolves),
+    limit: String(limit),
+  });
+  const res = await fetch(`${API_BASE}/zbll/cases?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch ZBLL cases');
+  return res.json();
+}
+
+export async function getZBLLRecent(limit = 20) {
+  const res = await fetch(`${API_BASE}/zbll/recent?limit=${limit}`);
+  if (!res.ok) throw new Error('Failed to fetch recent ZBLL solves');
+  return res.json();
+}
+
+export async function getZBLLProgress() {
+  const res = await fetch(`${API_BASE}/zbll/progress`);
+  if (!res.ok) throw new Error('Failed to fetch ZBLL progress');
+  return res.json();
+}

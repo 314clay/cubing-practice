@@ -1,0 +1,16 @@
+{
+  "name": "zbll-scraper",
+  "version": "1.0.0",
+  "description": "Scrape ZBLL practice stats from bestsiteever.net",
+  "type": "module",
+  "scripts": {
+    "scrape": "node scrape.js",
+    "analyze": "node analyze.js",
+    "server": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.0",
+    "puppeteer": "^21.0.0"
+  }
+}

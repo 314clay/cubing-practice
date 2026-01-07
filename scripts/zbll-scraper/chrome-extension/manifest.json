@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "ZBLL Stats Exporter",
+  "version": "1.0.0",
+  "description": "Automatically exports ZBLL practice stats from bestsiteever.net",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://bestsiteever.net/*",
+    "http://localhost:3847/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://bestsiteever.net/zbll/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
