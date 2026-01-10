@@ -1,4 +1,9 @@
+import { useState } from 'react';
+import { SessionDetailModal } from './SessionDetailModal';
+
 export function SessionHistory({ sessions }) {
+  const [selectedSession, setSelectedSession] = useState(null);
+
   if (!sessions || sessions.length === 0) {
     return (
       <div className="bg-gray-800 rounded-lg p-6">
@@ -20,7 +25,11 @@ export function SessionHistory({ sessions }) {
           const duration = end ? Math.round((end - start) / 1000 / 60) : null;
 
           return (
-            <div key={session.id} className="border border-gray-700 rounded-lg p-4">
+            <div
+              key={session.id}
+              onClick={() => setSelectedSession(session)}
+              className="border border-gray-700 rounded-lg p-4 cursor-pointer hover:border-gray-500 hover:bg-gray-700/50 transition-colors"
+            >
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <div className="font-medium">
@@ -51,6 +60,13 @@ export function SessionHistory({ sessions }) {
           );
         })}
       </div>
+
+      {selectedSession && (
+        <SessionDetailModal
+          session={selectedSession}
+          onClose={() => setSelectedSession(null)}
+        />
+      )}
     </div>
   );
 }

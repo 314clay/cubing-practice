@@ -9,7 +9,9 @@ import { RecentNotes } from './RecentNotes';
 import { SessionHistory } from './SessionHistory';
 import { PerformanceScatter } from './PerformanceScatter';
 import { AttemptsTimeline } from './AttemptsTimeline';
-import { getStats, getDailyStats, getTimeByDifficulty, getRecentNotes, getSessions, getSRSStats, getAttemptsScatter } from '../../api/client';
+import { SessionPairsChart } from './SessionPairsChart';
+import { DifficultyVsPairsChart } from './DifficultyVsPairsChart';
+import { getStats, getDailyStats, getTimeByDifficulty, getRecentNotes, getSessions, getSRSStats, getAttemptsScatter, getSessionPairs } from '../../api/client';
 import { SRSStats } from './SRSStats';
 import { ZBLLStats } from './ZBLLStats';
 
@@ -35,6 +37,7 @@ export function StatsPage() {
   const [sessions, setSessions] = useState([]);
   const [srsStats, setSrsStats] = useState(null);
   const [attemptsScatter, setAttemptsScatter] = useState([]);
+  const [sessionPairs, setSessionPairs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -45,7 +48,7 @@ export function StatsPage() {
         ? new Date(Date.now() - dateRange.days * 24 * 60 * 60 * 1000).toISOString()
         : undefined;
 
-      const [statsRes, dailyRes, timeRes, notesRes, sessionsRes, srsRes, scatterRes] = await Promise.all([
+      const [statsRes, dailyRes, timeRes, notesRes, sessionsRes, srsRes, scatterRes, sessionPairsRes] = await Promise.all([
         getStats(dateFrom),
         getDailyStats(dateRange.days || 365),
         getTimeByDifficulty(dateFrom),
@@ -53,6 +56,7 @@ export function StatsPage() {
         getSessions(10),
         getSRSStats(),
         getAttemptsScatter(dateFrom, 500),
+        getSessionPairs(dateFrom, 50),
       ]);
 
       setStats(statsRes);
@@ -62,6 +66,7 @@ export function StatsPage() {
       setSessions(sessionsRes.sessions || []);
       setSrsStats(srsRes);
       setAttemptsScatter(scatterRes.attempts || []);
+      setSessionPairs(sessionPairsRes.sessions || []);
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Failed to fetch stats:', err);
@@ -137,6 +142,11 @@ export function StatsPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <PerformanceScatter data={timeByDifficulty} />
             <AttemptsTimeline data={attemptsScatter} />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <SessionPairsChart data={sessionPairs} />
+            <DifficultyVsPairsChart data={sessionPairs} />
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">

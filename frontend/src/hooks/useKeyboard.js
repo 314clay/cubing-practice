@@ -1,6 +1,9 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 
 export function useKeyboard(handlers, deps = []) {
+  // Track if space is currently held down to prevent repeat events
+  const spaceHeldRef = useRef(false);
+
   const handleKeyDown = useCallback((event) => {
     // Ignore if typing in an input
     if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
@@ -14,8 +17,10 @@ export function useKeyboard(handlers, deps = []) {
 
     switch (event.key) {
       case ' ':
+        // Prevent page scroll, but don't trigger action on keydown
         event.preventDefault();
-        handlers.onSpace?.();
+        // Mark space as held to prevent repeat events
+        spaceHeldRef.current = true;
         break;
       case 'Enter':
         event.preventDefault();
@@ -23,6 +28,9 @@ export function useKeyboard(handlers, deps = []) {
         break;
       case 's':
         handlers.onSuccess?.();
+        break;
+      case 'b':
+        handlers.onBlind?.();
         break;
       case 'f':
         handlers.onFail?.();
@@ -36,6 +44,10 @@ export function useKeyboard(handlers, deps = []) {
         break;
       case 'Escape':
         handlers.onEscape?.();
+        break;
+      case '`':
+        // Backtick as alias for 0 (convenient location next to 1)
+        handlers.onPairsPlanned?.(0);
         break;
       case '0':
       case '1':
@@ -60,8 +72,27 @@ export function useKeyboard(handlers, deps = []) {
     }
   }, [handlers, ...deps]);
 
+  const handleKeyUp = useCallback((event) => {
+    // Ignore if typing in an input
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    if (event.key === ' ') {
+      // Only trigger if we weren't in a repeat cycle
+      if (spaceHeldRef.current) {
+        spaceHeldRef.current = false;
+        handlers.onSpace?.();
+      }
+    }
+  }, [handlers, ...deps]);
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
 }

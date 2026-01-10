@@ -27,7 +27,8 @@ router.get('/summary', async (req, res) => {
          COUNT(*) as total_attempts,
          COUNT(*) FILTER (WHERE cross_success = true) as successful,
          ROUND(100.0 * COUNT(*) FILTER (WHERE cross_success = true) / NULLIF(COUNT(*), 0), 1) as overall_cross_success_rate,
-         AVG(inspection_time_ms) FILTER (WHERE inspection_time_ms IS NOT NULL) as avg_inspection_time_ms
+         AVG(inspection_time_ms) FILTER (WHERE inspection_time_ms IS NOT NULL) as avg_inspection_time_ms,
+         AVG(inspection_time_ms) FILTER (WHERE inspection_time_ms IS NOT NULL AND cross_success = true) as avg_inspection_time_ms_successful
        FROM cross_trainer.attempts
        WHERE 1=1 ${dateCondition}`,
       values
@@ -103,6 +104,9 @@ router.get('/summary', async (req, res) => {
       by_pairs_attempted: byPairsAttempted,
       avg_inspection_time_ms: overall.avg_inspection_time_ms
         ? Math.round(parseFloat(overall.avg_inspection_time_ms))
+        : null,
+      avg_inspection_time_ms_successful: overall.avg_inspection_time_ms_successful
+        ? Math.round(parseFloat(overall.avg_inspection_time_ms_successful))
         : null
     });
   } catch (err) {
@@ -296,6 +300,61 @@ router.get('/attempts-scatter', async (req, res) => {
     res.status(500).json({
       error: {
         message: 'Failed to get attempts scatter data',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+// GET /api/stats/session-pairs - Get average pairs planned per session (successful attempts only)
+router.get('/session-pairs', async (req, res) => {
+  try {
+    const { date_from, limit = 50 } = req.query;
+
+    let dateCondition = '';
+    const values = [];
+    let paramIndex = 1;
+
+    if (date_from) {
+      dateCondition = ` AND s.started_at >= $${paramIndex++}`;
+      values.push(date_from);
+    }
+
+    values.push(parseInt(limit, 10));
+
+    const result = await db.query(
+      `SELECT
+         s.id as session_id,
+         s.started_at,
+         COUNT(a.id) as attempt_count,
+         COUNT(a.id) FILTER (WHERE a.cross_success = true) as successful_attempts,
+         AVG(a.pairs_planned) FILTER (WHERE a.pairs_planned > 0) as avg_pairs_planned,
+         AVG(a.cross_moves) as avg_difficulty
+       FROM cross_trainer.practice_sessions s
+       INNER JOIN cross_trainer.attempts a ON a.session_id = s.id
+       WHERE 1=1 ${dateCondition}
+       GROUP BY s.id, s.started_at
+       HAVING COUNT(a.id) FILTER (WHERE a.pairs_planned > 0) > 0
+       ORDER BY s.started_at DESC
+       LIMIT $${paramIndex}`,
+      values
+    );
+
+    res.json({
+      sessions: result.rows.map(row => ({
+        session_id: row.session_id,
+        started_at: row.started_at,
+        attempt_count: parseInt(row.attempt_count),
+        successful_attempts: parseInt(row.successful_attempts),
+        avg_pairs_planned: row.avg_pairs_planned ? parseFloat(row.avg_pairs_planned) : 0,
+        avg_difficulty: row.avg_difficulty ? parseFloat(row.avg_difficulty) : null
+      }))
+    });
+  } catch (err) {
+    console.error('Error getting session pairs stats:', err);
+    res.status(500).json({
+      error: {
+        message: 'Failed to get session pairs stats',
         code: 'INTERNAL_ERROR'
       }
     });

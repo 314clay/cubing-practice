@@ -32,6 +32,14 @@ export async function recordAttempt(attempt) {
   return res.json();
 }
 
+export async function deleteAttempt(attemptId) {
+  const res = await fetch(`${API_BASE}/attempts/${attemptId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete attempt');
+  return res.json();
+}
+
 export async function getSessionAttempts(sessionId) {
   const res = await fetch(`${API_BASE}/attempts?session_id=${sessionId}`);
   if (!res.ok) throw new Error('Failed to fetch attempts');
@@ -169,6 +177,14 @@ export async function getAttemptsScatter(dateFrom, limit = 500) {
   if (dateFrom) params.append('date_from', dateFrom);
   const res = await fetch(`${API_BASE}/stats/attempts-scatter?${params}`);
   if (!res.ok) throw new Error('Failed to fetch attempts scatter data');
+  return res.json();
+}
+
+export async function getSessionPairs(dateFrom, limit = 50) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (dateFrom) params.append('date_from', dateFrom);
+  const res = await fetch(`${API_BASE}/stats/session-pairs?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch session pairs data');
   return res.json();
 }
 

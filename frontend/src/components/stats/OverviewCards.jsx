@@ -6,7 +6,11 @@ export function OverviewCards({ stats }) {
     { label: 'Success Rate', value: `${stats.overall_cross_success_rate}%`, color: getSuccessColor(stats.overall_cross_success_rate) },
     { label: 'Sessions', value: stats.total_sessions },
     { label: 'Avg Inspection', value: stats.avg_inspection_time_ms ? `${(stats.avg_inspection_time_ms / 1000).toFixed(1)}s` : '-' },
-  ];
+    stats.avg_inspection_time_ms_successful != null && {
+      label: 'Avg Inspection (Success)',
+      value: `${(stats.avg_inspection_time_ms_successful / 1000).toFixed(1)}s`
+    },
+  ].filter(Boolean);
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

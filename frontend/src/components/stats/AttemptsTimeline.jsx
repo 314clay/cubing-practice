@@ -6,7 +6,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts';
 
 export function AttemptsTimeline({ data }) {
@@ -130,15 +129,26 @@ export function AttemptsTimeline({ data }) {
               label={{ value: 'Inspection Time (s)', angle: -90, position: 'insideLeft', fill: '#9CA3AF', fontSize: 12 }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
             <Scatter
               name="Success"
               data={successData}
               fill="#10B981"
               shape={(props) => {
                 const { cx, cy, payload } = props;
-                const size = 4 + payload.crossMoves; // Size based on difficulty
-                return <circle cx={cx} cy={cy} r={size} fill="#10B981" fillOpacity={0.7} />;
+                const fontSize = 10 + payload.crossMoves * 1.5; // Size based on difficulty
+                return (
+                  <text
+                    x={cx}
+                    y={cy}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#10B981"
+                    fontSize={fontSize}
+                    fontWeight="bold"
+                  >
+                    {payload.pairsAttempted}
+                  </text>
+                );
               }}
             />
             <Scatter
@@ -147,15 +157,38 @@ export function AttemptsTimeline({ data }) {
               fill="#EF4444"
               shape={(props) => {
                 const { cx, cy, payload } = props;
-                const size = 4 + payload.crossMoves;
-                return <circle cx={cx} cy={cy} r={size} fill="#EF4444" fillOpacity={0.7} />;
+                const fontSize = 10 + payload.crossMoves * 1.5;
+                return (
+                  <text
+                    x={cx}
+                    y={cy}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#EF4444"
+                    fontSize={fontSize}
+                    fontWeight="bold"
+                  >
+                    {payload.pairsAttempted}
+                  </text>
+                );
               }}
             />
           </ScatterChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex justify-center gap-4 mt-2 text-xs text-gray-400">
-        <span>Point size = difficulty (larger = more moves)</span>
+      <div className="flex justify-center items-center gap-4 mt-2 text-xs text-gray-400">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1">
+            <span className="text-green-500 font-bold">3</span>
+            = success
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="text-red-500 font-bold">3</span>
+            = fail
+          </span>
+        </div>
+        <span># = pairs attempted</span>
+        <span>Size = difficulty</span>
       </div>
     </div>
   );

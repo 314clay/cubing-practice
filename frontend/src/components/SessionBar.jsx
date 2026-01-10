@@ -37,6 +37,12 @@ export function SessionBar({ session, stats, onEndSession, onStartSession }) {
             {stats.successRate}%
           </span>
         </div>
+        {stats.avgInspectionTimeSuccessful != null && (
+          <div>
+            <span className="text-gray-400">Avg Insp:</span>{' '}
+            <span className="text-white">{(stats.avgInspectionTimeSuccessful / 1000).toFixed(1)}s</span>
+          </div>
+        )}
       </div>
       <button
         onClick={onEndSession}

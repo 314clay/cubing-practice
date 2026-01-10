@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { createSession, endSession as endSessionApi, getSessionAttempts } from '../api/client';
+import { createSession, endSession as endSessionApi, getSessionAttempts, deleteAttempt as deleteAttemptApi } from '../api/client';
 
 const SESSION_KEY = 'crossTrainer_activeSession';
 const LAST_ACTIVITY_KEY = 'crossTrainer_lastActivity';
@@ -96,11 +96,23 @@ export function useSession() {
     localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
   }, []);
 
+  const removeAttempt = useCallback(async (attemptId) => {
+    await deleteAttemptApi(attemptId);
+    setAttempts(prev => prev.filter(a => a.id !== attemptId));
+  }, []);
+
   const getSessionStats = useCallback(() => {
     const total = attempts.length;
     const successful = attempts.filter(a => a.cross_success).length;
     const successRate = total > 0 ? Math.round((successful / total) * 100) : 0;
-    return { total, successful, successRate };
+
+    // Average inspection time for successful attempts only
+    const successfulWithInspection = attempts.filter(a => a.cross_success && a.inspection_time_ms != null);
+    const avgInspectionTimeSuccessful = successfulWithInspection.length > 0
+      ? Math.round(successfulWithInspection.reduce((sum, a) => sum + a.inspection_time_ms, 0) / successfulWithInspection.length)
+      : null;
+
+    return { total, successful, successRate, avgInspectionTimeSuccessful };
   }, [attempts]);
 
   return {
@@ -110,6 +122,7 @@ export function useSession() {
     startSession,
     endSession,
     addAttempt,
+    removeAttempt,
     getSessionStats,
   };
 }

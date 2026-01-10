@@ -14,7 +14,9 @@ router.post('/', async (req, res) => {
       cross_success,
       pairs_planned = 0,
       inspection_time_ms,
+      execution_time_ms,
       used_unlimited_time = false,
+      blindfolded = false,
       notes
     } = req.body;
 
@@ -47,9 +49,11 @@ router.post('/', async (req, res) => {
          cross_success,
          pairs_planned,
          inspection_time_ms,
+         execution_time_ms,
          used_unlimited_time,
+         blindfolded,
          notes
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING id, session_id, created_at`,
       [
         session_id,
@@ -60,7 +64,9 @@ router.post('/', async (req, res) => {
         cross_success,
         pairs_planned,
         inspection_time_ms,
+        execution_time_ms,
         used_unlimited_time,
+        blindfolded,
         notes
       ]
     );
@@ -177,6 +183,37 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({
       error: {
         message: 'Failed to get attempt',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+// DELETE /api/attempts/:id - Delete an attempt
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await db.query(
+      `DELETE FROM cross_trainer.attempts WHERE id = $1 RETURNING id`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: {
+          message: 'Attempt not found',
+          code: 'NOT_FOUND'
+        }
+      });
+    }
+
+    res.json({ deleted: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error('Error deleting attempt:', err);
+    res.status(500).json({
+      error: {
+        message: 'Failed to delete attempt',
         code: 'INTERNAL_ERROR'
       }
     });

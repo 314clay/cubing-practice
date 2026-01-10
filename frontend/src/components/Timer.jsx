@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export function Timer({ running, onTimeUpdate, resetSignal }) {
+export function Timer({ running, onTimeUpdate, resetSignal, label, hint }) {
   const [time, setTime] = useState(0);
   const startTimeRef = useRef(null);
   const intervalRef = useRef(null);
@@ -44,12 +44,17 @@ export function Timer({ running, onTimeUpdate, resetSignal }) {
 
   return (
     <div className="text-center">
+      {label && (
+        <div className="text-sm text-gray-400 mb-1">{label}</div>
+      )}
       <div className="text-6xl font-mono font-bold tabular-nums text-white">
         {formatTime(time)}s
       </div>
-      <div className="text-sm text-gray-500 mt-2">
-        {running ? 'Press Space to stop' : 'Press Space to start'}
-      </div>
+      {hint && (
+        <div className="text-sm text-gray-500 mt-2">
+          {hint}
+        </div>
+      )}
     </div>
   );
 }
